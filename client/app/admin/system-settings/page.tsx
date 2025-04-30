@@ -26,7 +26,7 @@ export default function SystemSettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [autoModeration, setAutoModeration] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [siteName, setSiteName] = useState("ЭкоМаркет");
+  const [siteName, setSiteName] = useState("Биржа вторсырья");
   const [siteDescription, setSiteDescription] = useState(
     "Платформа для сдачи и приема вторсырья"
   );

@@ -17,7 +17,7 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <head>
-        <title>ЭкоМаркет - платформа для переработки вторсырья</title>
+        <title>Биржа вторсырья - платформа для переработки вторсырья</title>
         <meta
           name="description"
           content="Платформа для сдачи и приема вторсырья"
@@ -46,8 +46,8 @@ export default function RootLayout({
                   <footer className="border-t py-6 md:py-0">
                     <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
                       <p className="text-sm text-muted-foreground">
-                        &copy; {new Date().getFullYear()} ЭкоМаркет. Все права
-                        защищены.
+                        &copy; {new Date().getFullYear()} Биржа вторсырья. Все
+                        права защищены.
                       </p>
                       <div className="flex gap-4 text-sm text-muted-foreground">
                         <Link href="/terms">Условия использования</Link>

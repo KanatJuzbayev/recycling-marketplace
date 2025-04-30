@@ -1,11 +1,14 @@
 import type { MaterialType } from "@/types/material";
 
+// API URL
 const API_URL =
   "https://recycling-marketplace-backend.onrender.com/api/materials";
 
+// Функция для преобразования данных API в формат нашего приложения
 const mapApiMaterialToAppMaterial = (apiMaterial: any): MaterialType => {
+  console.log("Mapping API material:", apiMaterial);
   return {
-    id: apiMaterial.id.toString(),
+    id: apiMaterial.id?.toString() || "unknown_id",
     name: apiMaterial.name || "Без названия",
     type: apiMaterial.category_id
       ? mapCategoryIdToType(apiMaterial.category_id)
@@ -22,19 +25,21 @@ const mapApiMaterialToAppMaterial = (apiMaterial: any): MaterialType => {
   };
 };
 
+// Функция для преобразования category_id в тип материала
 const mapCategoryIdToType = (categoryId: number): string => {
   const categoryMap: { [key: number]: string } = {
     1: "plastic",
     2: "paper",
     3: "glass",
     4: "metal",
-    5: "other",
-    6: "organic",
-    7: "other",
+    5: "other", // кожа, резина и ветошь
+    6: "organic", // органика
+    7: "other", // другие отходы
   };
   return categoryMap[categoryId] || "other";
 };
 
+// Функция для преобразования статуса API в статус приложения
 const mapApiStatusToAppStatus = (apiStatus: string): string => {
   const statusMap: { [key: string]: string } = {
     Approved: "active",
@@ -44,11 +49,14 @@ const mapApiStatusToAppStatus = (apiStatus: string): string => {
   return statusMap[apiStatus] || "pending";
 };
 
+// Service functions
 export const getMaterials = async () => {
   try {
     console.log("Fetching materials from API:", API_URL);
 
+    // Получаем материалы только из API
     const response = await fetch(API_URL, {
+      // Добавляем случайный параметр для предотвращения кэширования
       cache: "no-store",
       headers: {
         "Cache-Control": "no-cache",
@@ -59,35 +67,67 @@ export const getMaterials = async () => {
     console.log("API response status:", response.status);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `API request failed with status ${response.status}: ${errorText}`
+      );
       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const apiMaterials = await response.json();
     console.log("Materials from API (raw):", apiMaterials);
+    console.log("API response type:", typeof apiMaterials);
+    console.log("Is array?", Array.isArray(apiMaterials));
 
+    // Проверяем, является ли ответ массивом
     if (!Array.isArray(apiMaterials)) {
       console.error("API did not return an array:", apiMaterials);
+
+      // Если ответ - объект с вложенным массивом данных, попробуем его извлечь
+      if (
+        apiMaterials &&
+        typeof apiMaterials === "object" &&
+        apiMaterials.data &&
+        Array.isArray(apiMaterials.data)
+      ) {
+        console.log(
+          "Found data array inside response object:",
+          apiMaterials.data
+        );
+        const processedMaterials = apiMaterials.data.map(
+          mapApiMaterialToAppMaterial
+        );
+        console.log("Processed materials from data array:", processedMaterials);
+        return processedMaterials;
+      }
+
       return [];
     }
 
+    // Преобразуем данные API в формат нашего приложения
     const processedMaterials = apiMaterials.map(mapApiMaterialToAppMaterial);
 
     console.log("Processed materials:", processedMaterials);
     return processedMaterials;
   } catch (error) {
     console.error("Error fetching materials from API:", error);
+    // В случае ошибки возвращаем пустой массив
     return [];
   }
 };
 
+// Остальные функции остаются без изменений...
 export const getAllMaterials = async () => {
+  // Используем ту же логику, что и в getMaterials
   return getMaterials();
 };
 
 export const getUserMaterials = async (userId: string) => {
   try {
+    // Получаем все материалы из API
     const allMaterials = await getMaterials();
 
+    // Фильтруем по userId
     return allMaterials.filter((m: MaterialType) => m.userId === userId);
   } catch (error) {
     console.error("Error fetching user materials:", error);
@@ -97,6 +137,7 @@ export const getUserMaterials = async (userId: string) => {
 
 export const getMaterialById = async (id: string) => {
   try {
+    // Получаем материал из API
     const response = await fetch(`${API_URL}/${id}`);
 
     if (!response.ok) {
@@ -104,6 +145,7 @@ export const getMaterialById = async (id: string) => {
     }
 
     const apiMaterial = await response.json();
+    // Преобразуем данные API в формат нашего приложения
     return mapApiMaterialToAppMaterial(apiMaterial);
   } catch (error) {
     console.error("Error fetching material by ID:", error);
@@ -115,9 +157,11 @@ export const createMaterial = async (
   material: Omit<MaterialType, "id" | "createdAt" | "status" | "userName">
 ) => {
   try {
+    // Получаем токен авторизации
     const token =
       localStorage.getItem("token") || localStorage.getItem("admin_token");
 
+    // Преобразуем материал в формат API
     const apiMaterial = {
       name: material.name,
       category_id: getCategoryIdFromType(material.type),
@@ -125,9 +169,10 @@ export const createMaterial = async (
       price: material.price.toString(),
       unit: "kg",
       image_url: material.image,
-      status: "Under review",
+      status: "Under review", // Новые материалы имеют статус "Under review"
     };
 
+    // Отправляем материал в API
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -142,6 +187,7 @@ export const createMaterial = async (
     }
 
     const responseData = await response.json();
+    // Преобразуем ответ API в формат нашего приложения
     return mapApiMaterialToAppMaterial(responseData);
   } catch (error) {
     console.error("Error creating material:", error);
@@ -149,13 +195,14 @@ export const createMaterial = async (
   }
 };
 
+// Функция для преобразования типа материала в category_id
 const getCategoryIdFromType = (type: string): number => {
   const typeMap: { [key: string]: number } = {
     plastic: 1,
     paper: 2,
     glass: 3,
     metal: 4,
-    other: 7,
+    other: 7, // Для всех остальных типов используем категорию 7
     organic: 6,
   };
   return typeMap[type] || 7;
@@ -163,9 +210,11 @@ const getCategoryIdFromType = (type: string): number => {
 
 export const updateMaterialStatus = async (id: string, status: string) => {
   try {
+    // Получаем токен авторизации
     const token =
       localStorage.getItem("token") || localStorage.getItem("admin_token");
 
+    // Сначала получаем текущий материал из API
     const response = await fetch(`${API_URL}/${id}`);
 
     if (!response.ok) {
@@ -174,6 +223,7 @@ export const updateMaterialStatus = async (id: string, status: string) => {
 
     const currentMaterial = await response.json();
 
+    // Преобразуем статус приложения в статус API
     const apiStatus =
       status === "active"
         ? "Approved"
@@ -181,11 +231,13 @@ export const updateMaterialStatus = async (id: string, status: string) => {
         ? "Under review"
         : "Rejected";
 
+    // Обновляем статус
     const updatedMaterial = {
       ...currentMaterial,
       status: apiStatus,
     };
 
+    // Отправляем обновленный материал в API
     const updateResponse = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
       headers: {
@@ -207,6 +259,7 @@ export const updateMaterialStatus = async (id: string, status: string) => {
 
     const result = await updateResponse.json();
     console.log("Material status successfully updated in API:", result);
+    // Преобразуем ответ API в формат нашего приложения
     return mapApiMaterialToAppMaterial(result);
   } catch (error) {
     console.error("Failed to update material status in API:", error);
@@ -219,9 +272,11 @@ export const updateMaterial = async (
   updates: Partial<MaterialType>
 ) => {
   try {
+    // Получаем токен авторизации
     const token =
       localStorage.getItem("token") || localStorage.getItem("admin_token");
 
+    // Сначала получаем текущий материал из API
     const response = await fetch(`${API_URL}/${id}`);
 
     if (!response.ok) {
@@ -230,6 +285,7 @@ export const updateMaterial = async (
 
     const currentMaterial = await response.json();
 
+    // Преобразуем обновления в формат API
     const apiUpdates: any = {};
 
     if (updates.name !== undefined) apiUpdates.name = updates.name;
@@ -249,11 +305,13 @@ export const updateMaterial = async (
           : "Rejected";
     }
 
+    // Обновляем материал
     const updatedMaterial = {
       ...currentMaterial,
       ...apiUpdates,
     };
 
+    // Отправляем обновленный материал в API
     const updateResponse = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
       headers: {
@@ -270,6 +328,7 @@ export const updateMaterial = async (
     }
 
     const result = await updateResponse.json();
+    // Преобразуем ответ API в формат нашего приложения
     return mapApiMaterialToAppMaterial(result);
   } catch (error) {
     console.error("Failed to update material in API:", error);
@@ -282,10 +341,13 @@ export const updateMaterialQuantity = async (
   quantityChange: number
 ) => {
   try {
+    // Получаем текущий материал
     const material = await getMaterialById(id);
 
+    // Обновляем количество
     const newQuantity = material.quantity - quantityChange;
 
+    // Используем функцию updateMaterial для обновления
     return updateMaterial(id, { quantity: newQuantity });
   } catch (error) {
     console.error("Failed to update material quantity in API:", error);
@@ -295,9 +357,11 @@ export const updateMaterialQuantity = async (
 
 export const deleteMaterial = async (id: string) => {
   try {
+    // Получаем токен авторизации
     const token =
       localStorage.getItem("token") || localStorage.getItem("admin_token");
 
+    // Удаляем материал из API
     const response = await fetch(`${API_URL}/${id}`, {
       method: "DELETE",
       headers: {
@@ -317,13 +381,16 @@ export const deleteMaterial = async (id: string) => {
   }
 };
 
+// Функция для получения материалов с фильтрацией
 export const getMaterialsByFilter = async (filters: {
   category?: string;
   sort?: string;
 }) => {
   try {
+    // Получаем все материалы
     const allMaterials = await getMaterials();
 
+    // Применяем фильтры локально
     let filteredMaterials = [...allMaterials];
 
     if (filters.category && filters.category !== "all") {

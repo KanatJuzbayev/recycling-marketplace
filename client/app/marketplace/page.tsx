@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, Search, Filter, X } from "lucide-react";
+import { Loader2, Search, Filter, X, AlertCircle } from "lucide-react";
 import { getMaterials } from "@/services/material-service";
 import type { MaterialType } from "@/types/material";
 import { MaterialCard } from "@/components/material-card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Функция для перевода типа материала на русский язык
 const getMaterialTypeLabel = (type: string): string => {
   const typeMap: Record<string, string> = {
     plastic: "Пластик",
@@ -44,6 +46,7 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [materialType, setMaterialType] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [apiResponse, setApiResponse] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -51,19 +54,40 @@ export default function MarketplacePage() {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getMaterials();
 
+        console.log("MarketplacePage: Fetching materials...");
+        const data = await getMaterials();
+        console.log("MarketplacePage: Received materials:", data);
+
+        // Сохраняем сырой ответ API для отладки
+        setApiResponse(data);
+
+        // Проверяем, что data - это массив
+        if (!Array.isArray(data)) {
+          console.error("MarketplacePage: Data is not an array:", data);
+          setError(
+            "Получены некорректные данные от API. Ожидался массив материалов."
+          );
+          setMaterials([]);
+          setFilteredMaterials([]);
+          return;
+        }
+
+        // Фильтруем только активные материалы
         const activeMaterials = data.filter(
           (material) => material.status === "active"
         );
+        console.log("MarketplacePage: Active materials:", activeMaterials);
 
         setMaterials(activeMaterials);
         setFilteredMaterials(activeMaterials);
       } catch (error) {
-        console.error("Error fetching materials:", error);
+        console.error("MarketplacePage: Error fetching materials:", error);
         setError(
           "Не удалось загрузить материалы. Пожалуйста, попробуйте позже."
         );
+        setMaterials([]);
+        setFilteredMaterials([]);
       } finally {
         setIsLoading(false);
       }
@@ -72,6 +96,7 @@ export default function MarketplacePage() {
     fetchMaterials();
   }, []);
 
+  // Получаем уникальные типы материалов из текущего набора данных
   const availableMaterialTypes = useMemo(() => {
     const types = new Set<string>();
     materials.forEach((material) => {
@@ -80,29 +105,37 @@ export default function MarketplacePage() {
       }
     });
 
+    // Преобразуем Set в массив объектов для селекта
     const typeOptions = Array.from(types).map((type) => ({
       value: type,
       label: getMaterialTypeLabel(type),
     }));
 
+    // Сортируем по алфавиту
     typeOptions.sort((a, b) => a.label.localeCompare(b.label));
 
+    // Добавляем опцию "Все типы" в начало
     return [{ value: "all", label: "Все типы" }, ...typeOptions];
   }, [materials]);
 
+  // Находим максимальную цену для слайдера
   const maxPrice = useMemo(() => {
     if (materials.length === 0) return 1000;
     const max = Math.max(...materials.map((m) => m.price || 0));
+    // Округляем до ближайшей сотни вверх
     return Math.ceil(max / 100) * 100;
   }, [materials]);
 
+  // Обновляем диапазон цен при изменении максимальной цены
   useEffect(() => {
     setPriceRange([0, maxPrice]);
   }, [maxPrice]);
 
   useEffect(() => {
+    // Применяем фильтры при изменении материалов или параметров фильтрации
     let result = [...materials];
 
+    // Фильтр по поисковому запросу
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -113,10 +146,12 @@ export default function MarketplacePage() {
       );
     }
 
+    // Фильтр по типу материала
     if (materialType !== "all") {
       result = result.filter((material) => material.type === materialType);
     }
 
+    // Фильтр по диапазону цен
     result = result.filter(
       (material) =>
         material.price !== undefined &&
@@ -137,9 +172,104 @@ export default function MarketplacePage() {
     setPriceRange([0, maxPrice]);
   };
 
+  const handleRetry = async () => {
+    const fetchMaterials = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Добавляем случайный параметр для предотвращения кэширования
+        const timestamp = new Date().getTime();
+        console.log(
+          "MarketplacePage: Retrying fetch materials with timestamp:",
+          timestamp
+        );
+
+        // Прямой запрос к API для отладки
+        const response = await fetch(
+          `https://recycling-marketplace-backend.onrender.com/api/materials?t=${timestamp}`,
+          {
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          }
+        );
+
+        console.log(
+          "MarketplacePage: Direct API response status:",
+          response.status
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `MarketplacePage: API request failed with status ${response.status}: ${errorText}`
+          );
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const rawData = await response.json();
+        console.log("MarketplacePage: Direct API raw data:", rawData);
+
+        // Теперь используем сервис для получения обработанных данных
+        const data = await getMaterials();
+        console.log("MarketplacePage: Received materials from service:", data);
+
+        // Сохраняем сырой ответ API для отладки
+        setApiResponse(data);
+
+        // Проверяем, что data - это массив
+        if (!Array.isArray(data)) {
+          console.error("MarketplacePage: Data is not an array:", data);
+          setError(
+            "Получены некорректные данные от API. Ожидался массив материалов."
+          );
+          setMaterials([]);
+          setFilteredMaterials([]);
+          return;
+        }
+
+        // Фильтруем только активные материалы
+        const activeMaterials = data.filter(
+          (material) => material.status === "active"
+        );
+        console.log("MarketplacePage: Active materials:", activeMaterials);
+
+        setMaterials(activeMaterials);
+        setFilteredMaterials(activeMaterials);
+      } catch (error) {
+        console.error("MarketplacePage: Error fetching materials:", error);
+        setError(
+          "Не удалось загрузить материалы. Пожалуйста, попробуйте позже."
+        );
+        setMaterials([]);
+        setFilteredMaterials([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  };
+
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Витрина материалов</h1>
+
+      {/* Отладочная информация */}
+      {apiResponse && (
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Отладочная информация</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 max-h-40 overflow-auto bg-gray-100 p-2 rounded text-xs">
+              <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-[1fr_3fr]">
         {/* Фильтры */}
@@ -190,7 +320,7 @@ export default function MarketplacePage() {
 
               <div>
                 <label className="text-sm font-medium mb-3 block">
-                  Цена за кг (₸)
+                  Цена за кг (₽)
                 </label>
                 <Slider
                   defaultValue={[0, maxPrice]}
@@ -203,8 +333,8 @@ export default function MarketplacePage() {
                   className="mb-2"
                 />
                 <div className="flex justify-between mt-1 text-sm text-muted-foreground">
-                  <span>{priceRange[0]} ₸</span>
-                  <span>{priceRange[1]} ₸</span>
+                  <span>{priceRange[0]} ₽</span>
+                  <span>{priceRange[1]} ₽</span>
                 </div>
               </div>
 
@@ -242,9 +372,7 @@ export default function MarketplacePage() {
               ) : error ? (
                 <div className="text-center py-12">
                   <p className="text-destructive mb-4">{error}</p>
-                  <Button onClick={() => window.location.reload()}>
-                    Попробовать снова
-                  </Button>
+                  <Button onClick={handleRetry}>Попробовать снова</Button>
                 </div>
               ) : filteredMaterials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -275,9 +403,7 @@ export default function MarketplacePage() {
               ) : error ? (
                 <div className="text-center py-12">
                   <p className="text-destructive mb-4">{error}</p>
-                  <Button onClick={() => window.location.reload()}>
-                    Попробовать снова
-                  </Button>
+                  <Button onClick={handleRetry}>Попробовать снова</Button>
                 </div>
               ) : filteredMaterials.length > 0 ? (
                 <div className="space-y-4">
@@ -308,7 +434,7 @@ export default function MarketplacePage() {
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="font-bold">
-                                {material.price} ₸/кг
+                                {material.price} ₽/кг
                               </span>
                             </div>
                           </div>
