@@ -188,7 +188,7 @@ function PrivacyPage() {
                 className: "prose max-w-none",
                 children: [
                     /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("p", {
-                        children: "Настоящая Политика конфиденциальности описывает, как ЭкоМаркет собирает, использует и раскрывает вашу информацию при использовании нашего сервиса."
+                        children: "Настоящая Политика конфиденциальности описывает, как Биржа вторсырья собирает, использует и раскрывает вашу информацию при использовании нашего сервиса."
                     }),
                     /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("h2", {
                         children: "1. Сбор информации"
@@ -231,7 +231,7 @@ function PrivacyPage() {
                         children: "2. Использование данных"
                     }),
                     /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("p", {
-                        children: "ЭкоМаркет использует собранные данные для различных целей:"
+                        children: "Биржа вторсырья использует собранные данные для различных целей:"
                     }),
                     /*#__PURE__*/ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("ul", {
                         children: [
@@ -265,7 +265,7 @@ function PrivacyPage() {
                         children: "4. Раскрытие данных"
                     }),
                     /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("p", {
-                        children: "ЭкоМаркет может раскрывать ваши Личные данные в добросовестной вере, что такое действие необходимо для:"
+                        children: "Биржа вторсырья может раскрывать ваши Личные данные в добросовестной вере, что такое действие необходимо для:"
                     }),
                     /*#__PURE__*/ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)("ul", {
                         children: [
@@ -273,7 +273,7 @@ function PrivacyPage() {
                                 children: "Соблюдения юридического обязательства"
                             }),
                             /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("li", {
-                                children: "Защиты и защиты прав или собственности ЭкоМаркет"
+                                children: "Защиты и защиты прав или собственности Биржа вторсырья"
                             }),
                             /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("li", {
                                 children: "Предотвращения или расследования возможных правонарушений в связи с сервисом"

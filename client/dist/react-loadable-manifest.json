@@ -1,12 +1,30 @@
 {
+  "app\\admin\\materials\\page.tsx -> @/services/notification-service": {
+    "id": 6807,
+    "files": [
+      "static/chunks/6807.d30cbb5b805d8523.js"
+    ]
+  },
+  "app\\auth\\register\\page.tsx -> @/services/auth-service": {
+    "id": 9235,
+    "files": [
+      "static/chunks/9235.5d045bca7e93286f.js"
+    ]
+  },
+  "app\\profile\\materials\\new\\page.tsx -> @/services/notification-service": {
+    "id": 6807,
+    "files": [
+      "static/chunks/6807.d30cbb5b805d8523.js"
+    ]
+  },
   "context\\auth-context.tsx -> @/services/auth-service": {
-    "id": "context\\auth-context.tsx -> @/services/auth-service",
+    "id": 9235,
     "files": []
   },
   "services\\application-service.ts -> @/services/notification-service": {
-    "id": "services\\application-service.ts -> @/services/notification-service",
+    "id": 6807,
     "files": [
-      "static/chunks/_app-pages-browser_services_notification-service_ts.js"
+      "static/chunks/6807.d30cbb5b805d8523.js"
     ]
   }
 }

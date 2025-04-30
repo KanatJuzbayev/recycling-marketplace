@@ -333,7 +333,7 @@ function SystemSettingsPage() {
     const [emailNotifications, setEmailNotifications] = (0,react.useState)(true);
     const [autoModeration, setAutoModeration] = (0,react.useState)(false);
     const [maintenanceMode, setMaintenanceMode] = (0,react.useState)(false);
-    const [siteName, setSiteName] = (0,react.useState)("ЭкоМаркет");
+    const [siteName, setSiteName] = (0,react.useState)("Биржа вторсырья");
     const [siteDescription, setSiteDescription] = (0,react.useState)("Платформа для сдачи и приема вторсырья");
     const [smtpHost, setSmtpHost] = (0,react.useState)("smtp.example.com");
     const [smtpPort, setSmtpPort] = (0,react.useState)("587");

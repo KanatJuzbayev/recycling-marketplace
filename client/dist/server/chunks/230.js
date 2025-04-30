@@ -91,7 +91,7 @@ function MainNav() {
                     }),
                     /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("span", {
                         className: "font-bold inline-block",
-                        children: "ЭкоМаркет"
+                        children: "Биржа вторсырья"
                     })
                 ]
             }),
@@ -2472,7 +2472,7 @@ function RootLayout({ children }) {
             /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("head", {
                 children: [
                     /*#__PURE__*/ react_jsx_runtime.jsx("title", {
-                        children: "ЭкоМаркет - платформа для переработки вторсырья"
+                        children: "Биржа вторсырья - платформа для переработки вторсырья"
                     }),
                     /*#__PURE__*/ react_jsx_runtime.jsx("meta", {
                         name: "description",
@@ -2516,7 +2516,7 @@ function RootLayout({ children }) {
                                                         children: [
                                                             "\xa9 ",
                                                             new Date().getFullYear(),
-                                                            " ЭкоМаркет. Все права защищены."
+                                                            " Биржа вторсырья. Все права защищены."
                                                         ]
                                                     }),
                                                     /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("div", {

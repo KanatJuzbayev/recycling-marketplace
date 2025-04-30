@@ -801,6 +801,8 @@ const slider_Slider = /*#__PURE__*/ react.forwardRef(({ className, ...props }, r
 slider_Slider.displayName = Root.displayName;
 
 
+// EXTERNAL MODULE: ./node_modules/lucide-react/dist/esm/icons/circle-alert.js
+var circle_alert = __webpack_require__(1291);
 // EXTERNAL MODULE: ./node_modules/lucide-react/dist/esm/createLucideIcon.js + 3 modules
 var createLucideIcon = __webpack_require__(2881);
 ;// CONCATENATED MODULE: ./node_modules/lucide-react/dist/esm/icons/search.js
@@ -852,8 +854,12 @@ const Filter = (0,createLucideIcon/* default */.Z)("Filter", [
 ]);
  //# sourceMappingURL=filter.js.map
 
+// EXTERNAL MODULE: ./services/material-service.ts
+var material_service = __webpack_require__(1374);
 // EXTERNAL MODULE: ./components/material-card.tsx
 var material_card = __webpack_require__(6918);
+// EXTERNAL MODULE: ./components/ui/alert.tsx
+var ui_alert = __webpack_require__(3273);
 ;// CONCATENATED MODULE: ./app/marketplace/page.tsx
 /* __next_internal_client_entry_do_not_use__ default auto */ 
 
@@ -867,6 +873,8 @@ var material_card = __webpack_require__(6918);
 
 
 
+
+// Функция для перевода типа материала на русский язык
 const getMaterialTypeLabel = (type)=>{
     const typeMap = {
         plastic: "Пластик",
@@ -890,8 +898,10 @@ function MarketplacePage() {
         0,
         1000
     ]);
+    const [apiResponse, setApiResponse] = (0,react.useState)(null);
     const router = (0,navigation.useRouter)();
     null;
+    // Получаем уникальные типы материалов из текущего набора данных
     const availableMaterialTypes = (0,react.useMemo)(()=>{
         const types = new Set();
         materials.forEach((material)=>{
@@ -899,11 +909,14 @@ function MarketplacePage() {
                 types.add(material.type);
             }
         });
+        // Преобразуем Set в массив объектов для селекта
         const typeOptions = Array.from(types).map((type)=>({
                 value: type,
                 label: getMaterialTypeLabel(type)
             }));
+        // Сортируем по алфавиту
         typeOptions.sort((a, b)=>a.label.localeCompare(b.label));
+        // Добавляем опцию "Все типы" в начало
         return [
             {
                 value: "all",
@@ -914,13 +927,16 @@ function MarketplacePage() {
     }, [
         materials
     ]);
+    // Находим максимальную цену для слайдера
     const maxPrice = (0,react.useMemo)(()=>{
         if (materials.length === 0) return 1000;
         const max = Math.max(...materials.map((m)=>m.price || 0));
+        // Округляем до ближайшей сотни вверх
         return Math.ceil(max / 100) * 100;
     }, [
         materials
     ]);
+    // Обновляем диапазон цен при изменении максимальной цены
     null;
     null;
     const handleSearch = (e)=>{
@@ -934,12 +950,84 @@ function MarketplacePage() {
             maxPrice
         ]);
     };
+    const handleRetry = async ()=>{
+        const fetchMaterials = async ()=>{
+            try {
+                setIsLoading(true);
+                setError(null);
+                // Добавляем случайный параметр для предотвращения кэширования
+                const timestamp = new Date().getTime();
+                console.log("MarketplacePage: Retrying fetch materials with timestamp:", timestamp);
+                // Прямой запрос к API для отладки
+                const response = await fetch(`https://recycling-marketplace-backend.onrender.com/api/materials?t=${timestamp}`, {
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control": "no-cache",
+                        Pragma: "no-cache"
+                    }
+                });
+                console.log("MarketplacePage: Direct API response status:", response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`MarketplacePage: API request failed with status ${response.status}: ${errorText}`);
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                const rawData = await response.json();
+                console.log("MarketplacePage: Direct API raw data:", rawData);
+                // Теперь используем сервис для получения обработанных данных
+                const data = await (0,material_service/* getMaterials */.aS)();
+                console.log("MarketplacePage: Received materials from service:", data);
+                // Сохраняем сырой ответ API для отладки
+                setApiResponse(data);
+                // Проверяем, что data - это массив
+                if (!Array.isArray(data)) {
+                    console.error("MarketplacePage: Data is not an array:", data);
+                    setError("Получены некорректные данные от API. Ожидался массив материалов.");
+                    setMaterials([]);
+                    setFilteredMaterials([]);
+                    return;
+                }
+                // Фильтруем только активные материалы
+                const activeMaterials = data.filter((material)=>material.status === "active");
+                console.log("MarketplacePage: Active materials:", activeMaterials);
+                setMaterials(activeMaterials);
+                setFilteredMaterials(activeMaterials);
+            } catch (error) {
+                console.error("MarketplacePage: Error fetching materials:", error);
+                setError("Не удалось загрузить материалы. Пожалуйста, попробуйте позже.");
+                setMaterials([]);
+                setFilteredMaterials([]);
+            } finally{
+                setIsLoading(false);
+            }
+        };
+        fetchMaterials();
+    };
     return /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("div", {
         className: "container py-8",
         children: [
             /*#__PURE__*/ react_jsx_runtime.jsx("h1", {
                 className: "text-3xl font-bold mb-6",
                 children: "Витрина материалов"
+            }),
+            apiResponse && /*#__PURE__*/ (0,react_jsx_runtime.jsxs)(ui_alert/* Alert */.bZ, {
+                className: "mb-4",
+                children: [
+                    /*#__PURE__*/ react_jsx_runtime.jsx(circle_alert/* default */.Z, {
+                        className: "h-4 w-4"
+                    }),
+                    /*#__PURE__*/ react_jsx_runtime.jsx(ui_alert/* AlertTitle */.Cd, {
+                        children: "Отладочная информация"
+                    }),
+                    /*#__PURE__*/ react_jsx_runtime.jsx(ui_alert/* AlertDescription */.X, {
+                        children: /*#__PURE__*/ react_jsx_runtime.jsx("div", {
+                            className: "mt-2 max-h-40 overflow-auto bg-gray-100 p-2 rounded text-xs",
+                            children: /*#__PURE__*/ react_jsx_runtime.jsx("pre", {
+                                children: JSON.stringify(apiResponse, null, 2)
+                            })
+                        })
+                    })
+                ]
             }),
             /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("div", {
                 className: "grid gap-6 md:grid-cols-[1fr_3fr]",
@@ -1011,7 +1099,7 @@ function MarketplacePage() {
                                             children: [
                                                 /*#__PURE__*/ react_jsx_runtime.jsx("label", {
                                                     className: "text-sm font-medium mb-3 block",
-                                                    children: "Цена за кг (₸)"
+                                                    children: "Цена за кг (₽)"
                                                 }),
                                                 /*#__PURE__*/ react_jsx_runtime.jsx(slider_Slider, {
                                                     defaultValue: [
@@ -1030,13 +1118,13 @@ function MarketplacePage() {
                                                         /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("span", {
                                                             children: [
                                                                 priceRange[0],
-                                                                " ₸"
+                                                                " ₽"
                                                             ]
                                                         }),
                                                         /*#__PURE__*/ (0,react_jsx_runtime.jsxs)("span", {
                                                             children: [
                                                                 priceRange[1],
-                                                                " ₸"
+                                                                " ₽"
                                                             ]
                                                         })
                                                     ]
@@ -1105,7 +1193,7 @@ function MarketplacePage() {
                                                 children: error
                                             }),
                                             /*#__PURE__*/ react_jsx_runtime.jsx(ui_button/* Button */.z, {
-                                                onClick: ()=>window.location.reload(),
+                                                onClick: handleRetry,
                                                 children: "Попробовать снова"
                                             })
                                         ]
@@ -1152,7 +1240,7 @@ function MarketplacePage() {
                                                 children: error
                                             }),
                                             /*#__PURE__*/ react_jsx_runtime.jsx(ui_button/* Button */.z, {
-                                                onClick: ()=>window.location.reload(),
+                                                onClick: handleRetry,
                                                 children: "Попробовать снова"
                                             })
                                         ]
@@ -1194,7 +1282,7 @@ function MarketplacePage() {
                                                                                 className: "font-bold",
                                                                                 children: [
                                                                                     material.price,
-                                                                                    " ₸/кг"
+                                                                                    " ₽/кг"
                                                                                 ]
                                                                             })
                                                                         })
@@ -1365,206 +1453,57 @@ function MaterialCard({ material, showFavoriteButton = true }) {
 
 /***/ }),
 
-/***/ 2643:
+/***/ 3273:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Ol: () => (/* binding */ CardHeader),
-/* harmony export */   SZ: () => (/* binding */ CardDescription),
-/* harmony export */   Zb: () => (/* binding */ Card),
-/* harmony export */   aY: () => (/* binding */ CardContent),
-/* harmony export */   eW: () => (/* binding */ CardFooter),
-/* harmony export */   ll: () => (/* binding */ CardTitle)
+/* harmony export */   Cd: () => (/* binding */ AlertTitle),
+/* harmony export */   X: () => (/* binding */ AlertDescription),
+/* harmony export */   bZ: () => (/* binding */ Alert)
 /* harmony export */ });
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(326);
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7577);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _lib_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7863);
-
-
-
-const Card = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("rounded-lg border bg-card text-card-foreground shadow-sm", className),
-        ...props
-    }));
-Card.displayName = "Card";
-const CardHeader = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("flex flex-col space-y-1.5 p-6", className),
-        ...props
-    }));
-CardHeader.displayName = "CardHeader";
-const CardTitle = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("text-2xl font-semibold leading-none tracking-tight", className),
-        ...props
-    }));
-CardTitle.displayName = "CardTitle";
-const CardDescription = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("text-sm text-muted-foreground", className),
-        ...props
-    }));
-CardDescription.displayName = "CardDescription";
-const CardContent = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("p-6 pt-0", className),
-        ...props
-    }));
-CardContent.displayName = "CardContent";
-const CardFooter = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("flex items-center p-6 pt-0", className),
-        ...props
-    }));
-CardFooter.displayName = "CardFooter";
-
-
-
-/***/ }),
-
-/***/ 4432:
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   I: () => (/* binding */ Input)
-/* harmony export */ });
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(326);
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7577);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _lib_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7863);
-
-
-
-const Input = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, type, ...props }, ref)=>{
-    return /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("input", {
-        type: type,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_2__.cn)("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", className),
-        ref: ref,
-        ...props
-    });
-});
-Input.displayName = "Input";
-
-
-
-/***/ }),
-
-/***/ 4474:
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Bw: () => (/* binding */ SelectContent),
-/* harmony export */   Ph: () => (/* binding */ Select),
-/* harmony export */   Ql: () => (/* binding */ SelectItem),
-/* harmony export */   i4: () => (/* binding */ SelectTrigger),
-/* harmony export */   ki: () => (/* binding */ SelectValue)
-/* harmony export */ });
-/* unused harmony exports SelectGroup, SelectLabel, SelectSeparator, SelectScrollUpButton, SelectScrollDownButton */
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(326);
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7577);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4875);
-/* harmony import */ var _barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8393);
-/* harmony import */ var _barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(6633);
-/* harmony import */ var _barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(2933);
+/* harmony import */ var class_variance_authority__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9360);
 /* harmony import */ var _lib_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7863);
-/* __next_internal_client_entry_do_not_use__ Select,SelectGroup,SelectValue,SelectTrigger,SelectContent,SelectLabel,SelectItem,SelectSeparator,SelectScrollUpButton,SelectScrollDownButton auto */ 
 
 
 
 
-const Select = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Root */ .fC;
-const SelectGroup = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Group */ .ZA;
-const SelectValue = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Value */ .B4;
-const SelectTrigger = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, children, ...props }, ref)=>/*#__PURE__*/ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Trigger */ .xz, {
+const alertVariants = (0,class_variance_authority__WEBPACK_IMPORTED_MODULE_2__/* .cva */ .j)("relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground", {
+    variants: {
+        variant: {
+            default: "bg-background text-foreground",
+            destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive"
+        }
+    },
+    defaultVariants: {
+        variant: "default"
+    }
+});
+const Alert = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, variant, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
         ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1", className),
-        ...props,
-        children: [
-            children,
-            /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Icon */ .JO, {
-                asChild: true,
-                children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_4__/* ["default"] */ .Z, {
-                    className: "h-4 w-4 opacity-50"
-                })
-            })
-        ]
-    }));
-SelectTrigger.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Trigger */ .xz.displayName;
-const SelectScrollUpButton = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ScrollUpButton */ .u_, {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("flex cursor-default items-center justify-center py-1", className),
-        ...props,
-        children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_5__/* ["default"] */ .Z, {
-            className: "h-4 w-4"
-        })
-    }));
-SelectScrollUpButton.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ScrollUpButton */ .u_.displayName;
-const SelectScrollDownButton = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ScrollDownButton */ .$G, {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("flex cursor-default items-center justify-center py-1", className),
-        ...props,
-        children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_4__/* ["default"] */ .Z, {
-            className: "h-4 w-4"
-        })
-    }));
-SelectScrollDownButton.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ScrollDownButton */ .$G.displayName;
-const SelectContent = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, children, position = "popper", ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Portal */ .h_, {
-        children: /*#__PURE__*/ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Content */ .VY, {
-            ref: ref,
-            className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2", position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", className),
-            position: position,
-            ...props,
-            children: [
-                /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(SelectScrollUpButton, {}),
-                /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Viewport */ .l_, {
-                    className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"),
-                    children: children
-                }),
-                /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(SelectScrollDownButton, {})
-            ]
-        })
-    }));
-SelectContent.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Content */ .VY.displayName;
-const SelectLabel = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Label */ .__, {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("py-1.5 pl-8 pr-2 text-sm font-semibold", className),
+        role: "alert",
+        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)(alertVariants({
+            variant
+        }), className),
         ...props
     }));
-SelectLabel.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Label */ .__.displayName;
-const SelectItem = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, children, ...props }, ref)=>/*#__PURE__*/ (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsxs)(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Item */ .ck, {
+Alert.displayName = "Alert";
+const AlertTitle = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("h5", {
         ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className),
-        ...props,
-        children: [
-            /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("span", {
-                className: "absolute left-2 flex h-3.5 w-3.5 items-center justify-center",
-                children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ItemIndicator */ .wU, {
-                    children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_barrel_optimize_names_Check_ChevronDown_ChevronUp_lucide_react__WEBPACK_IMPORTED_MODULE_6__/* ["default"] */ .Z, {
-                        className: "h-4 w-4"
-                    })
-                })
-            }),
-            /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .ItemText */ .eT, {
-                children: children
-            })
-        ]
-    }));
-SelectItem.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Item */ .ck.displayName;
-const SelectSeparator = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Separator */ .Z0, {
-        ref: ref,
-        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("-mx-1 my-1 h-px bg-muted", className),
+        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("mb-1 font-medium leading-none tracking-tight", className),
         ...props
     }));
-SelectSeparator.displayName = _radix_ui_react_select__WEBPACK_IMPORTED_MODULE_2__/* .Separator */ .Z0.displayName;
+AlertTitle.displayName = "AlertTitle";
+const AlertDescription = /*#__PURE__*/ react__WEBPACK_IMPORTED_MODULE_1__.forwardRef(({ className, ...props }, ref)=>/*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx("div", {
+        ref: ref,
+        className: (0,_lib_utils__WEBPACK_IMPORTED_MODULE_3__.cn)("text-sm [&_p]:leading-relaxed", className),
+        ...props
+    }));
+AlertDescription.displayName = "AlertDescription";
 
 
 
@@ -1790,6 +1729,56 @@ tabs_TabsContent.displayName = Content.displayName;
 
 /***/ }),
 
+/***/ 1291:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ CircleAlert)
+/* harmony export */ });
+/* harmony import */ var _createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2881);
+/**
+ * @license lucide-react v0.454.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */ 
+const CircleAlert = (0,_createLucideIcon_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)("CircleAlert", [
+    [
+        "circle",
+        {
+            cx: "12",
+            cy: "12",
+            r: "10",
+            key: "1mglay"
+        }
+    ],
+    [
+        "line",
+        {
+            x1: "12",
+            x2: "12",
+            y1: "8",
+            y2: "12",
+            key: "1pkeuh"
+        }
+    ],
+    [
+        "line",
+        {
+            x1: "12",
+            x2: "12.01",
+            y1: "16",
+            y2: "16",
+            key: "4dfq90"
+        }
+    ]
+]);
+ //# sourceMappingURL=circle-alert.js.map
+
+
+/***/ }),
+
 /***/ 7427:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
@@ -1894,7 +1883,7 @@ const __default__ = proxy.default;
 var __webpack_require__ = require("../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [960,180,230], () => (__webpack_exec__(2469)));
+var __webpack_exports__ = __webpack_require__.X(0, [960,180,230,653], () => (__webpack_exec__(2469)));
 module.exports = __webpack_exports__;
 
 })();
